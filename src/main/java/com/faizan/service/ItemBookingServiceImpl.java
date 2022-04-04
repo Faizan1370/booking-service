@@ -1,11 +1,14 @@
 package com.faizan.service;
 
 import java.io.File;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +30,9 @@ public class ItemBookingServiceImpl implements ItemBookingService {
 
     @Autowired
     RestTemplate restTemplate;
+
+    @Autowired
+    JSONPlaceHolderClient jsonPlaceHolderCliet;
 
     @Value("${microservice.order-service.endpoints.endpoint.uri}")
     private String ENDPOINT_URI; // = "http://PAYMENT-SERVICE/payment/order-payment";
@@ -64,10 +70,12 @@ public class ItemBookingServiceImpl implements ItemBookingService {
 
     }
 
+    // sort the list on the basis of field name which has price 100
     @Override
-    public List<Item> getItems() {
-        final Iterable<Item> items = bookingRepository.findAll();
-        return (List<Item>) items;
+    public Page<Item> getItems(Integer pageNumber, Integer numberOfRecord, String sortBy) {
+        final Pageable sortedByPriceDesc = PageRequest.of(pageNumber, numberOfRecord, Sort.by(sortBy).descending());
+        final Page<Item> items = bookingRepository.findByItemPrice(100.00, sortedByPriceDesc);
+        return items;
 
     }
 
@@ -90,7 +98,9 @@ public class ItemBookingServiceImpl implements ItemBookingService {
             order.setPrice(item.get().getItemPrice() * qty);
             order.setName(item.get().getItemName());
 
-            final OrderRequestDTO orderResponse = restTemplate.postForObject(ENDPOINT_URI, order, OrderRequestDTO.class);
+            final OrderRequestDTO orderResponse = jsonPlaceHolderCliet.orderItem(order);
+
+            // final OrderRequestDTO orderResponse = restTemplate.postForObject(ENDPOINT_URI, order, OrderRequestDTO.class);
             if (orderResponse == null) {
                 throw new BadRequestException("no response from order service");
             }

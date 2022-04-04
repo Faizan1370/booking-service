@@ -1,11 +1,12 @@
 package com.faizan.bookingcontroller;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,10 +50,10 @@ public class ItemController {
 
     }
 
-    @GetMapping("/items")
-    public ResponseEntity<?> getItems() {
-        final List<Item> items = itemBookingService.getItems();
-        return ResponseEntity.ok(items);
+    @GetMapping("/items/{pageNumber}/{numberOfRecord}/{sortBy}")
+    public ResponseEntity<?> getItems(@PathVariable("pageNumber") Integer pageNumber, @PathVariable("numberOfRecord") Integer numberOfRecord, @PathVariable("sortBy") String sortBy) {
+        final Page<Item> items = itemBookingService.getItems(pageNumber, numberOfRecord, sortBy);
+        return ResponseEntity.ok(items.get().collect(Collectors.toList()));
 
     }
 
